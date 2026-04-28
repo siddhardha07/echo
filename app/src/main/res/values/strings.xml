@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Echo</string>
+    
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_label">Echo Assistant</string>
+    <string name="accessibility_service_description">Allows Echo to detect double-tap gestures to activate voice commands. Echo can control apps and perform actions on your behalf.</string>
+    
+    <!-- Voice -->
+    <string name="listening">Listening…</string>
+    <string name="processing">Processing…</string>
+    <string name="speaking">Speaking…</string>
+    
+    <!-- Permissions -->
+    <string name="permission_microphone_required">Microphone permission is required for voice commands</string>
+    <string name="permission_accessibility_required">Please enable Echo Accessibility Service to use double-tap activation</string>
+    
+    <!-- UI -->
+    <string name="status_idle">Echo is ready. Tap bubble or double-tap screen.</string>
+    <string name="status_listening">I\'m listening…</string>
+    <string name="double_tap_hint">Double-tap anywhere on screen to wake Echo</string>
+    
+    <!-- Settings -->
+    <string name="enable_accessibility">Enable Accessibility</string>
+    <string name="test_voice">Test Voice</string>
+    <string name="about">About</string>
+    
+    <!-- Notification -->
+    <string name="notification_channel_name">Echo Voice Service</string>
+    <string name="notification_channel_description">Echo voice recognition service</string>
+    <string name="notification_title">Echo is listening</string>
+    <string name="notification_text">Tap to stop</string>
+</resources>

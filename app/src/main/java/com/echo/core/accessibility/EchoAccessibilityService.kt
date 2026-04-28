@@ -12,11 +12,12 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.echo.core.voice.VoiceResult
 import com.echo.core.voice.VoiceService
+import com.echo.util.Constants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import com.echo.util.Constants
+import kotlinx.coroutines.launch
 
 /**
  * Accessibility service that detects double-tap gestures to activate Echo

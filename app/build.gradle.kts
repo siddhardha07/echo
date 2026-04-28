@@ -76,15 +76,6 @@ android {
     }
     
     ndkVersion = "26.1.10909125"
-    
-    // Exclude llama.cpp example source files from compilation
-    sourceSets {
-        getByName("main") {
-            java {
-                exclude("**/llama.cpp/examples/**")
-            }
-        }
-    }
 
     packaging {
         resources {

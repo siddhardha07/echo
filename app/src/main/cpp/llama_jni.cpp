@@ -39,12 +39,12 @@ Java_com_echo_core_ai_LlamaCppEngine_nativeInit(JNIEnv* env, jobject, jstring mo
             return JNI_FALSE;
         }
         
-        // Create context (optimized for maximum speed)
+        // Create context (optimized for mobile)
         llama_context_params ctx_params = llama_context_default_params();
-        ctx_params.n_ctx = 2048;  // Larger context for full responses
-        ctx_params.n_batch = 512;
-        ctx_params.n_threads = 8;
-        ctx_params.n_threads_batch = 8;
+        ctx_params.n_ctx = 1024;  // Balanced for mobile
+        ctx_params.n_batch = 256; // Reduced for mobile memory
+        ctx_params.n_threads = 4; // Optimal for mobile CPUs
+        ctx_params.n_threads_batch = 4;
         
         g_ctx = llama_new_context_with_model(g_model, ctx_params);
         if (!g_ctx) {
@@ -107,6 +107,9 @@ Java_com_echo_core_ai_LlamaCppEngine_nativeGenerate(JNIEnv* env, jobject, jstrin
         }
         
         tokens.resize(n_tokens);
+        
+        // NOTE: Memory is NOT cleared here to maintain conversation context
+        // Use nativeClearMemory() to explicitly clear when starting a new conversation
         
         // Create batch  
         llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
@@ -210,6 +213,9 @@ Java_com_echo_core_ai_LlamaCppEngine_nativeGenerateStreaming(
         
         tokens.resize(n_tokens);
         
+        // NOTE: Memory is NOT cleared here to maintain conversation context
+        // Use nativeClearMemory() to explicitly clear when starting a new conversation
+        
         // Decode prompt
         llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
         if (llama_decode(g_ctx, batch) != 0) {
@@ -301,6 +307,16 @@ JNIEXPORT void JNICALL
 Java_com_echo_core_ai_LlamaCppEngine_nativeCancelGeneration(JNIEnv*, jobject) {
     LOGD("Cancelling generation");
     g_cancel_generation.store(true);
+}
+
+JNIEXPORT void JNICALL
+Java_com_echo_core_ai_LlamaCppEngine_nativeClearMemory(JNIEnv*, jobject) {
+    if (g_ctx && g_sampler) {
+        LOGD("Clearing conversation memory");
+        llama_memory_clear(llama_get_memory(g_ctx), false);
+        llama_sampler_reset(g_sampler);
+        LOGD("Memory cleared - ready for new conversation");
+    }
 }
 
 } // extern "C"

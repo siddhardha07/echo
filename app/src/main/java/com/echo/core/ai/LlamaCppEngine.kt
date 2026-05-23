@@ -106,6 +106,20 @@ class LlamaCppEngine @Inject constructor(
     
     private external fun nativeCancelGeneration()
     
+    private external fun nativeClearMemory()
+    
+    /**
+     * Clear conversation memory (for starting fresh conversation)
+     */
+    fun clearMemory() {
+        try {
+            nativeClearMemory()
+            Log.d(tag, "Memory cleared")
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to clear memory", e)
+        }
+    }
+    
     /**
      * Cancel ongoing generation
      */

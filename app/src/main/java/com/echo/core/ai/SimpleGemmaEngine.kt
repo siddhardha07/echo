@@ -19,6 +19,9 @@ class SimpleGemmaEngine @Inject constructor(
     private val tag = "SimpleGemmaEngine"
     private var isInitialized = false
     
+    // Conversation history for multi-turn chat
+    private val conversationHistory = mutableListOf<Pair<String, String>>() // (user, assistant)
+    
     /**
      * Initialize Gemma 4 2B
      */
@@ -59,7 +62,7 @@ class SimpleGemmaEngine @Inject constructor(
      * Generate an intelligent response
      */
     /**
-     * Chat with streaming responses
+     * Chat with streaming responses (with conversation memory)
      */
     suspend fun chatStreaming(
         userMessage: String,
@@ -71,8 +74,8 @@ class SimpleGemmaEngine @Inject constructor(
         }
         
         try {
-            val prompt = buildGemmaPrompt(userMessage)
-            Log.d(tag, "Generating response for: $userMessage")
+            val prompt = buildGemmaPromptWithHistory(userMessage)
+            Log.d(tag, "Generating response for: $userMessage (history: ${conversationHistory.size} turns)")
             
             val response = llamaCppEngine.generateStreaming(
                 prompt = prompt, 
@@ -84,10 +87,16 @@ class SimpleGemmaEngine @Inject constructor(
                 return@withContext getFallbackResponse(userMessage)
             }
             
-            response.trim()
+            val cleanedResponse = response.trim()
                 .replace(Regex("\\s+"), " ")
                 .substringBefore("<end_of_turn>")
                 .trim()
+            
+            // Add to conversation history
+            conversationHistory.add(userMessage to cleanedResponse)
+            Log.d(tag, "Conversation history now has ${conversationHistory.size} turns")
+            
+            cleanedResponse
             
         } catch (e: Exception) {
             Log.e(tag, "Error generating response", e)
@@ -96,13 +105,37 @@ class SimpleGemmaEngine @Inject constructor(
     }
     
     /**
-     * Build Gemma-2 instruction prompt format
+     * Build Gemma-2 instruction prompt format with conversation history
      */
-    private fun buildGemmaPrompt(userMessage: String): String {
-        return """<start_of_turn>user
-$userMessage<end_of_turn>
-<start_of_turn>model
-"""
+    private fun buildGemmaPromptWithHistory(userMessage: String): String {
+        val promptBuilder = StringBuilder()
+        
+        // Add previous conversation turns
+        for ((userMsg, assistantMsg) in conversationHistory) {
+            promptBuilder.append("<start_of_turn>user\n")
+            promptBuilder.append(userMsg)
+            promptBuilder.append("<end_of_turn>\n")
+            promptBuilder.append("<start_of_turn>model\n")
+            promptBuilder.append(assistantMsg)
+            promptBuilder.append("<end_of_turn>\n")
+        }
+        
+        // Add current user message
+        promptBuilder.append("<start_of_turn>user\n")
+        promptBuilder.append(userMessage)
+        promptBuilder.append("<end_of_turn>\n")
+        promptBuilder.append("<start_of_turn>model\n")
+        
+        return promptBuilder.toString()
+    }
+    
+    /**
+     * Clear conversation history (start fresh conversation)
+     */
+    fun clearConversation() {
+        conversationHistory.clear()
+        llamaCppEngine.clearMemory()
+        Log.d(tag, "Conversation history cleared")
     }
     
     /**

@@ -1,8 +1,16 @@
 package com.echo
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,13 +57,42 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var gemmaEngine: SimpleGemmaEngine
+    
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        // Permission result handled
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Request storage permission for model access
+        requestStoragePermission()
 
         setContent {
             EchoTheme {
                 EchoApp(gemmaEngine = gemmaEngine)
+            }
+        }
+    }
+    
+    private fun requestStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.data = Uri.parse("package:$packageName")
+                    storagePermissionLauncher.launch(intent)
+                } catch (e: Exception) {
+                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    storagePermissionLauncher.launch(intent)
+                }
+            }
+        } else {
+            // For older versions
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 1)
             }
         }
     }
@@ -161,6 +198,37 @@ fun ChatScreen(gemmaEngine: SimpleGemmaEngine) {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
+        // Clear chat button bar
+        if (messages.isNotEmpty()) {
+            Surface(
+                tonalElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            messages = emptyList()
+                            gemmaEngine.clearConversation()
+                        },
+                        enabled = !isGenerating
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Clear chat",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Clear Chat")
+                    }
+                }
+            }
+        }
+        
         // Messages list
         LazyColumn(
             modifier = Modifier

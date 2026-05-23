@@ -88,7 +88,7 @@ class VoiceService : Service() {
                 // Stop listening after getting result or error
                 when (result) {
                     is VoiceResult.Success, is VoiceResult.Error -> {
-                        isListening = false
+                        stopListening()
                     }
                     else -> {}
                 }
